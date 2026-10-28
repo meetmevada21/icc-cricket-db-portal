@@ -101,6 +101,10 @@
         <button id="nav-schema" onclick="switchTab('schema')" class="nav-tab px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap text-slate-300 hover:text-white hover:bg-slate-800/70">
           ER &amp; Local DB
         </button>
+        <button id="nav-search" onclick="switchTab('search')" class="nav-tab px-3 py-1.5 rounded-lg text-xs sm:text-sm font-medium transition-all whitespace-nowrap text-slate-300 hover:text-white hover:bg-slate-800/70 flex items-center gap-1.5">
+          <span>🔍 Global Search</span>
+          <span id="nav-search-badge" class="px-1.5 py-0.5 rounded-full text-[10px] font-mono bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">All 8 Tables</span>
+        </button>
       </nav>
 
       <!-- Role Access & DB Connection Status Buttons -->
@@ -116,6 +120,32 @@
           <span id="db-status-dot" class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
           <span id="db-status-label" class="text-slate-200">In-Memory SQL (Ready)</span>
         </button>
+      </div>
+    </div>
+    <!-- Global Search Omni-Bar Across All 8 Data Tables & 2 SQL Views -->
+    <div class="border-t border-slate-800/80 bg-[#050B1C]/90">
+      <div class="max-w-7xl mx-auto px-4 sm:px-6 py-2 flex flex-wrap items-center justify-between gap-2">
+        <div class="relative flex-1 min-w-[240px]">
+          <span class="absolute left-3 top-1/2 -translate-y-1/2 text-cyan-400 text-xs font-mono">SQL 🔍</span>
+          <input
+            id="header-global-search"
+            type="text"
+            oninput="handleHeaderGlobalSearch(this.value)"
+            onfocus="if(this.value.trim()){switchTab('search');}"
+            placeholder="Global Search across all 8 tables & 2 views (tournaments, matches, players, teams, formats, junctions... Press '/' to focus)"
+            class="w-full bg-slate-900/95 border border-slate-700/90 focus:border-cyan-400 rounded-lg pl-16 pr-24 py-1.5 text-xs sm:text-sm text-white placeholder-slate-400 focus:outline-none transition-all"
+          />
+          <div class="absolute right-2 top-1/2 -translate-y-1/2 flex items-center gap-1">
+            <button id="header-search-clear" onclick="clearGlobalSearch()" class="hidden px-1.5 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-[10px] font-mono text-slate-300">Clear</button>
+            <kbd class="hidden sm:inline-block px-1.5 py-0.5 rounded bg-slate-800 text-[10px] font-mono text-slate-400 border border-slate-700">/</kbd>
+          </div>
+        </div>
+        <div class="flex items-center gap-2 text-[11px] font-mono text-slate-400">
+          <span id="header-search-summary" class="text-cyan-300">8 Tables + 2 Views Indexed</span>
+          <button onclick="switchTab('search')" class="px-2.5 py-1 rounded-lg bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 border border-cyan-500/30 font-semibold transition-all">
+            Open Search Explorer &rarr;
+          </button>
+        </div>
       </div>
     </div>
   </header>
@@ -541,6 +571,77 @@
           <textarea id="live-sql-output" readonly class="w-full h-[540px] bg-slate-950 border border-slate-800 rounded-xl p-4 font-mono text-xs text-emerald-300 focus:outline-none custom-scroll leading-relaxed"></textarea>
         </div>
       </div>
+    </section>
+
+    <!-- =================================================================== -->
+    <!-- TAB 7: GLOBAL SEARCH ACROSS ALL 8 DATA TABLES & 2 SQL VIEWS         -->
+    <!-- =================================================================== -->
+    <section id="tab-search" class="hidden space-y-6">
+      <div class="glass-card rounded-2xl p-5 space-y-4 border border-cyan-500/30">
+        <div class="flex flex-wrap items-center justify-between gap-4">
+          <div>
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="px-2.5 py-0.5 rounded bg-cyan-500/20 text-cyan-300 border border-cyan-500/40 font-mono text-xs font-bold">GLOBAL MULTI-TABLE SEARCH</span>
+              <h2 class="text-xl font-bold text-white">Unified Search Across All 8 ER Tables &amp; 2 SQL Views</h2>
+            </div>
+            <p class="text-xs text-slate-400 mt-1">
+              Simultaneously queries <code class="font-mono text-cyan-300">tournaments</code>, <code class="font-mono text-cyan-300">tournament_types</code>, <code class="font-mono text-cyan-300">matches</code>, <code class="font-mono text-cyan-300">match_teams</code>, <code class="font-mono text-cyan-300">players</code>, <code class="font-mono text-cyan-300">player_formats</code>, <code class="font-mono text-cyan-300">player_matches</code>, <code class="font-mono text-cyan-300">player_tournaments</code>, <code class="font-mono text-amber-300">vw_player_rankings</code>, and <code class="font-mono text-amber-300">vw_tournament_matches</code>.
+            </p>
+          </div>
+          <div class="flex items-center gap-2">
+            <span id="global-search-total-badge" class="px-3 py-1.5 rounded-xl bg-blue-600/25 border border-cyan-500/40 font-mono text-xs font-bold text-cyan-300">
+              0 matching rows
+            </span>
+          </div>
+        </div>
+
+        <!-- Search Input & Quick Query Chips -->
+        <div class="space-y-3">
+          <div class="flex flex-col sm:flex-row gap-2.5">
+            <div class="relative flex-1">
+              <input
+                id="global-search-input"
+                type="text"
+                oninput="handleTabGlobalSearch(this.value)"
+                placeholder="Type any ID, player name, country, team, tournament, format (ODI/Test/T20I), umpire, date, or salary..."
+                class="w-full bg-slate-950 border border-slate-700 focus:border-cyan-400 rounded-xl px-4 py-2.5 text-sm text-white placeholder-slate-500 focus:outline-none font-medium"
+              />
+            </div>
+            <button onclick="clearGlobalSearch()" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold border border-slate-700 transition-all">
+              Reset Filter (Show All Records)
+            </button>
+          </div>
+
+          <!-- Quick Preset Chips -->
+          <div class="flex flex-wrap items-center gap-1.5 text-xs">
+            <span class="text-slate-400 font-mono text-[11px] mr-1">Quick Queries:</span>
+            <button onclick="setGlobalSearchQuery('India')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-700 font-mono text-[11px]">India</button>
+            <button onclick="setGlobalSearchQuery('Australia')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-cyan-300 border border-slate-700 font-mono text-[11px]">Australia</button>
+            <button onclick="setGlobalSearchQuery('Virat Kohli')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-amber-300 border border-slate-700 font-mono text-[11px]">Virat Kohli</button>
+            <button onclick="setGlobalSearchQuery('Jasprit Bumrah')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-amber-300 border border-slate-700 font-mono text-[11px]">Jasprit Bumrah</button>
+            <button onclick="setGlobalSearchQuery('ODI')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-emerald-300 border border-slate-700 font-mono text-[11px]">ODI</button>
+            <button onclick="setGlobalSearchQuery('T20I')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-emerald-300 border border-slate-700 font-mono text-[11px]">T20I</button>
+            <button onclick="setGlobalSearchQuery('Test')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-emerald-300 border border-slate-700 font-mono text-[11px]">Test</button>
+            <button onclick="setGlobalSearchQuery('Richard Illingworth')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-purple-300 border border-slate-700 font-mono text-[11px]">Richard Illingworth</button>
+            <button onclick="setGlobalSearchQuery('101')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 font-mono text-[11px]">TID 101</button>
+            <button onclick="setGlobalSearchQuery('501')" class="px-2.5 py-1 rounded-lg bg-slate-900 hover:bg-slate-800 text-slate-300 border border-slate-700 font-mono text-[11px]">MID 501</button>
+          </div>
+
+          <!-- Table Filter Pills -->
+          <div id="global-search-table-pills" class="flex flex-wrap items-center gap-1.5 pt-2 border-t border-slate-800/80"></div>
+
+          <!-- Live SQL Execution Preview -->
+          <div class="p-2.5 rounded-xl bg-slate-950/90 border border-slate-800 flex flex-wrap items-center justify-between gap-2 text-[11px] font-mono">
+            <div class="truncate text-emerald-400" id="global-search-sql-preview">
+              CALL sp_global_search(''); -- Scanning all 8 relational tables &amp; 2 views
+            </div>
+            <span class="text-slate-400 shrink-0">MySQL Endpoint: <code class="text-cyan-300">GET /api/search?q=...</code></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Multi-Table Search Results Container -->
+      <div id="global-search-results" class="space-y-5"></div>
     </section>
 
   </main>
@@ -1050,7 +1151,7 @@
     // TAB NAVIGATION & VIEW SWITCHING
     // =========================================================================
     window.switchTab = function(tabName) {
-      const tabs = ['dashboard', 'tournaments', 'matches', 'players', 'views', 'schema'];
+      const tabs = ['dashboard', 'tournaments', 'matches', 'players', 'views', 'schema', 'search'];
       tabs.forEach(t => {
         const sec = document.getElementById('tab-' + t);
         const btn = document.getElementById('nav-' + t);
@@ -1066,6 +1167,8 @@
         renderDashboardCharts();
       } else if (tabName === 'schema') {
         generateLiveSqlDump();
+      } else if (tabName === 'search') {
+        renderGlobalSearch();
       }
     };
 
@@ -1124,6 +1227,7 @@
       renderPlayers();
       renderSqlViews();
       generateLiveSqlDump();
+      renderGlobalSearch();
     }
 
     function renderKpisAndQuickViews() {
@@ -2211,6 +2315,7 @@
       renderTournaments();
       renderMatches();
       renderPlayers();
+      renderGlobalSearch();
     }
 
     window.handleAuthClick = function() {
@@ -2441,6 +2546,697 @@
 
       modal.classList.remove('hidden');
     };
+
+    // =========================================================================
+    // GLOBAL SEARCH ENGINE ACROSS ALL 8 RELATIONAL TABLES & 2 SQL VIEWS
+    // =========================================================================
+    let globalSearchQuery = '';
+    let globalSearchActiveTable = 'ALL';
+    let remoteSearchResults = null;
+
+    function escapeHtml(str) {
+      return String(str ?? '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;');
+    }
+
+    function highlightMatch(text, query) {
+      const safeText = escapeHtml(text);
+      if (!query) return safeText;
+      const escapedQ = query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`(${escapedQ})`, 'gi');
+      return safeText.replace(regex, '<mark class="bg-amber-400/30 text-amber-200 px-0.5 rounded font-semibold">$1</mark>');
+    }
+
+    function rowMatchesQuery(fields, q) {
+      if (!q) return true;
+      const lowerQ = q.toLowerCase();
+      return fields.some(val => String(val ?? '').toLowerCase().includes(lowerQ));
+    }
+
+    window.handleHeaderGlobalSearch = function(val) {
+      globalSearchQuery = val;
+      const tabInput = document.getElementById('global-search-input');
+      if (tabInput && tabInput.value !== val) {
+        tabInput.value = val;
+      }
+      const clearBtn = document.getElementById('header-search-clear');
+      if (clearBtn) {
+        clearBtn.classList.toggle('hidden', !val.trim());
+      }
+      const searchSection = document.getElementById('tab-search');
+      if (searchSection && searchSection.classList.contains('hidden')) {
+        switchTab('search');
+        const headerInput = document.getElementById('header-global-search');
+        if (headerInput) headerInput.focus();
+      } else {
+        renderGlobalSearch();
+      }
+      triggerRemoteApiSearch(val);
+    };
+
+    window.handleTabGlobalSearch = function(val) {
+      globalSearchQuery = val;
+      const headerInput = document.getElementById('header-global-search');
+      if (headerInput && headerInput.value !== val) {
+        headerInput.value = val;
+      }
+      const clearBtn = document.getElementById('header-search-clear');
+      if (clearBtn) {
+        clearBtn.classList.toggle('hidden', !val.trim());
+      }
+      renderGlobalSearch();
+      triggerRemoteApiSearch(val);
+    };
+
+    window.setGlobalSearchQuery = function(q) {
+      globalSearchQuery = q;
+      const headerInput = document.getElementById('header-global-search');
+      const tabInput = document.getElementById('global-search-input');
+      if (headerInput) headerInput.value = q;
+      if (tabInput) tabInput.value = q;
+      const clearBtn = document.getElementById('header-search-clear');
+      if (clearBtn) clearBtn.classList.toggle('hidden', !q.trim());
+      switchTab('search');
+      renderGlobalSearch();
+      triggerRemoteApiSearch(q);
+    };
+
+    window.clearGlobalSearch = function() {
+      setGlobalSearchQuery('');
+    };
+
+    window.setGlobalSearchTableFilter = function(tableKey) {
+      globalSearchActiveTable = tableKey;
+      renderGlobalSearch();
+    };
+
+    window.jumpToEntityInTab = function(tabName, searchInputId, searchVal) {
+      switchTab(tabName);
+      if (searchInputId) {
+        const inp = document.getElementById(searchInputId);
+        if (inp) {
+          inp.value = searchVal;
+          if (tabName === 'tournaments') renderTournaments();
+          if (tabName === 'matches') renderMatches();
+          if (tabName === 'players') renderPlayers();
+        }
+      }
+    };
+
+    async function triggerRemoteApiSearch(q) {
+      if (!apiMode) {
+        remoteSearchResults = null;
+        return;
+      }
+      try {
+        const res = await fetch(`${apiBaseUrl}/search?q=${encodeURIComponent(q.trim())}`);
+        const data = await res.json();
+        if (data && data.ok && data.results) {
+          remoteSearchResults = data.results;
+          renderGlobalSearch(true);
+        }
+      } catch (e) {
+        remoteSearchResults = null;
+      }
+    }
+
+    window.renderGlobalSearch = function(fromRemote = false) {
+      const q = (globalSearchQuery || '').trim();
+      const sqlPreview = document.getElementById('global-search-sql-preview');
+      if (sqlPreview) {
+        const safeSqlQ = q.replace(/'/g, "''");
+        sqlPreview.textContent = q
+          ? `CALL sp_global_search('${safeSqlQ}'); -- Filtering all 8 tables & 2 views WHERE column LIKE '%${safeSqlQ}%'`
+          : `CALL sp_global_search(''); -- Showing all records across all 8 relational tables & 2 SQL views`;
+      }
+
+      // Compute enriched rows across all 8 tables + 2 views
+      const tournamentsRows = db.tournaments.filter(t =>
+        rowMatchesQuery([t.TID, t.Tname, t.Tduration], q)
+      );
+
+      const tournamentTypesRows = db.tournament_types.map(tt => {
+        const parentT = db.tournaments.find(t => Number(t.TID) === Number(tt.TID));
+        return { ...tt, Tname: parentT ? parentT.Tname : 'Unassigned' };
+      }).filter(tt =>
+        rowMatchesQuery([tt.TID, tt.Ttype, tt.Tname], q)
+      );
+
+      const matchesRows = db.matches.map(m => {
+        const parentT = db.tournaments.find(t => Number(t.TID) === Number(m.TID));
+        const teams = db.match_teams.filter(mt => Number(mt.MID) === Number(m.MID)).map(mt => mt.TeamName).join(' vs ');
+        return { ...m, Tname: parentT ? parentT.Tname : 'Independent', Teams: teams };
+      }).filter(m =>
+        rowMatchesQuery([m.MID, m.match_date, m.match_time, m.mType, m.Outcome, m.TotalRuns, m.Umpires, m.TID, m.Tname, m.Teams], q)
+      );
+
+      const matchTeamsRows = db.match_teams.map(mt => {
+        const parentM = db.matches.find(m => Number(m.MID) === Number(mt.MID));
+        return {
+          ...mt,
+          match_date: parentM ? parentM.match_date : '-',
+          mType: parentM ? parentM.mType : '-',
+          Outcome: parentM ? parentM.Outcome : '-'
+        };
+      }).filter(mt =>
+        rowMatchesQuery([mt.MID, mt.TeamName, mt.match_date, mt.mType, mt.Outcome], q)
+      );
+
+      const playersRows = db.players.filter(p =>
+        rowMatchesQuery([p.PID, p.Pname, p.Country, p.Salary], q)
+      );
+
+      const playerFormatsRows = db.player_formats.map(pf => {
+        const parentP = db.players.find(p => Number(p.PID) === Number(pf.PID));
+        return {
+          ...pf,
+          Pname: parentP ? parentP.Pname : `PID ${pf.PID}`,
+          Country: parentP ? parentP.Country : '-'
+        };
+      }).filter(pf =>
+        rowMatchesQuery([pf.PID, pf.Format, pf.Ranking, pf.Pname, pf.Country], q)
+      );
+
+      const playerMatchesRows = db.player_matches.map(pm => {
+        const parentP = db.players.find(p => Number(p.PID) === Number(pm.PID));
+        const parentM = db.matches.find(m => Number(m.MID) === Number(pm.MID));
+        const teams = db.match_teams.filter(mt => Number(mt.MID) === Number(pm.MID)).map(mt => mt.TeamName).join(' vs ');
+        return {
+          ...pm,
+          Pname: parentP ? parentP.Pname : `PID ${pm.PID}`,
+          Country: parentP ? parentP.Country : '-',
+          MatchLabel: teams || (parentM ? parentM.mType : `MID ${pm.MID}`),
+          match_date: parentM ? parentM.match_date : '-',
+          mType: parentM ? parentM.mType : '-'
+        };
+      }).filter(pm =>
+        rowMatchesQuery([pm.PID, pm.MID, pm.Pname, pm.Country, pm.MatchLabel, pm.match_date, pm.mType], q)
+      );
+
+      const playerTournamentsRows = db.player_tournaments.map(pt => {
+        const parentP = db.players.find(p => Number(p.PID) === Number(pt.PID));
+        const parentT = db.tournaments.find(t => Number(t.TID) === Number(pt.TID));
+        return {
+          ...pt,
+          Pname: parentP ? parentP.Pname : `PID ${pt.PID}`,
+          Country: parentP ? parentP.Country : '-',
+          Tname: parentT ? parentT.Tname : `TID ${pt.TID}`,
+          Tduration: parentT ? parentT.Tduration : '-'
+        };
+      }).filter(pt =>
+        rowMatchesQuery([pt.PID, pt.TID, pt.Pname, pt.Country, pt.Tname, pt.Tduration], q)
+      );
+
+      const vwRankingsRows = computeVwPlayerRankings().filter(r =>
+        rowMatchesQuery([r.PID, r.Pname, r.Country, r.Salary, r.Format, r.Ranking], q)
+      );
+
+      const vwMatchesRows = computeVwTournamentMatches().filter(m =>
+        rowMatchesQuery([m.TID, m.Tname, m.TournamentTypes, m.MID, m.match_date, m.mType, m.Teams, m.Outcome, m.TotalRuns, m.Umpires], q)
+      );
+
+      const tableMeta = [
+        { key: 'tournaments', label: 'tournaments', pk: 'PK: TID', count: tournamentsRows.length },
+        { key: 'tournament_types', label: 'tournament_types', pk: 'PK: (TID, Ttype)', count: tournamentTypesRows.length },
+        { key: 'matches', label: 'matches', pk: 'PK: MID | FK: TID', count: matchesRows.length },
+        { key: 'match_teams', label: 'match_teams', pk: 'PK: (MID, TeamName)', count: matchTeamsRows.length },
+        { key: 'players', label: 'players', pk: 'PK: PID', count: playersRows.length },
+        { key: 'player_formats', label: 'player_formats', pk: 'PK: (PID, Format)', count: playerFormatsRows.length },
+        { key: 'player_matches', label: 'player_matches', pk: 'PK: (PID, MID)', count: playerMatchesRows.length },
+        { key: 'player_tournaments', label: 'player_tournaments', pk: 'PK: (PID, TID)', count: playerTournamentsRows.length },
+        { key: 'views', label: 'SQL Views (2)', pk: 'vw_player_rankings + vw_tournament_matches', count: vwRankingsRows.length + vwMatchesRows.length }
+      ];
+
+      const totalMatches = tableMeta.reduce((acc, t) => acc + t.count, 0);
+      const tablesWithMatches = tableMeta.filter(t => t.count > 0).length;
+
+      // Update badges
+      const totalBadge = document.getElementById('global-search-total-badge');
+      if (totalBadge) {
+        totalBadge.textContent = `${totalMatches} matching rows across ${tablesWithMatches} table groups`;
+      }
+      const navBadge = document.getElementById('nav-search-badge');
+      if (navBadge) {
+        navBadge.textContent = q ? `${totalMatches} hits` : 'All 8 Tables';
+      }
+      const headerSummary = document.getElementById('header-search-summary');
+      if (headerSummary) {
+        headerSummary.textContent = q ? `${totalMatches} matches for "${q}"` : `${totalMatches} total rows indexed`;
+      }
+
+      // Render Table Filter Pills
+      const pillsContainer = document.getElementById('global-search-table-pills');
+      if (pillsContainer) {
+        const allBtnClass = globalSearchActiveTable === 'ALL'
+          ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400'
+          : 'bg-slate-900 text-slate-300 border-slate-700 hover:bg-slate-800';
+        const pillsHtml = [
+          `<button onclick="setGlobalSearchTableFilter('ALL')" class="px-2.5 py-1 rounded-lg text-xs font-mono border transition-all ${allBtnClass}">All Tables (${totalMatches})</button>`
+        ].concat(tableMeta.map(tm => {
+          const isActive = globalSearchActiveTable === tm.key;
+          const cls = isActive
+            ? 'bg-cyan-500 text-slate-950 font-bold border-cyan-400'
+            : (tm.count > 0 ? 'bg-slate-900 text-cyan-300 border-slate-700 hover:bg-slate-800' : 'bg-slate-950 text-slate-600 border-slate-800');
+          return `<button onclick="setGlobalSearchTableFilter('${tm.key}')" class="px-2.5 py-1 rounded-lg text-xs font-mono border transition-all ${cls}">${tm.label} (${tm.count})</button>`;
+        }));
+        pillsContainer.innerHTML = pillsHtml.join('');
+      }
+
+      const resultsContainer = document.getElementById('global-search-results');
+      if (!resultsContainer) return;
+
+      if (totalMatches === 0) {
+        resultsContainer.innerHTML = `
+          <div class="glass-card rounded-2xl p-10 text-center space-y-3 border border-slate-800">
+            <div class="text-lg font-bold text-white">No records found matching "${escapeHtml(q)}"</div>
+            <p class="text-xs text-slate-400 max-w-md mx-auto">Checked all 8 relational tables (<code class="font-mono">tournaments</code>, <code class="font-mono">tournament_types</code>, <code class="font-mono">matches</code>, <code class="font-mono">match_teams</code>, <code class="font-mono">players</code>, <code class="font-mono">player_formats</code>, <code class="font-mono">player_matches</code>, <code class="font-mono">player_tournaments</code>) and both SQL views.</p>
+            <button onclick="clearGlobalSearch()" class="px-4 py-2 rounded-lg bg-cyan-600 hover:bg-cyan-500 text-white text-xs font-semibold">Show All Database Records</button>
+          </div>
+        `;
+        return;
+      }
+
+      const sections = [];
+      const showTable = (key) => globalSearchActiveTable === 'ALL' || globalSearchActiveTable === key;
+
+      // 1. Table: tournaments
+      if (showTable('tournaments') && tournamentsRows.length > 0) {
+        sections.push(`
+          <div class="glass-card rounded-2xl p-5 space-y-3 border border-slate-800">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-blue-600/30 text-cyan-300 border border-blue-500/40">TABLE 1</span>
+                <h3 class="text-base font-bold font-mono text-white">tournaments</h3>
+                <span class="text-xs font-mono text-slate-400">(TID INT PK, Tname, Tduration)</span>
+              </div>
+              <span class="text-xs font-mono text-cyan-300 font-semibold">${tournamentsRows.length} row(s)</span>
+            </div>
+            <div class="overflow-x-auto custom-scroll">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-slate-800 text-slate-400 font-mono uppercase bg-slate-900/60">
+                    <th class="py-2 px-3">TID (PK)</th>
+                    <th class="py-2 px-3">Tname</th>
+                    <th class="py-2 px-3">Tduration</th>
+                    <th class="py-2 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                  ${tournamentsRows.map(t => `
+                    <tr class="hover:bg-slate-800/40">
+                      <td class="py-2 px-3 font-mono font-bold text-cyan-300">${highlightMatch(t.TID, q)}</td>
+                      <td class="py-2 px-3 font-semibold text-white">${highlightMatch(t.Tname, q)}</td>
+                      <td class="py-2 px-3 text-slate-300">${highlightMatch(t.Tduration, q)}</td>
+                      <td class="py-2 px-3 text-right space-x-1.5 whitespace-nowrap">
+                        <button onclick="openDetailModal('tournament', ${t.TID})" class="px-2 py-1 rounded bg-blue-600/25 hover:bg-blue-600/40 text-cyan-200 border border-cyan-500/30 font-semibold">Inspect</button>
+                        <button onclick="jumpToEntityInTab('tournaments', 'search-tournaments', '${escapeHtml(t.Tname)}')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200">Open Tab</button>
+                        ${isAdmin ? `<button onclick="openTournamentModal(${t.TID})" class="px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300">Edit</button>` : ''}
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `);
+      }
+
+      // 2. Table: tournament_types
+      if (showTable('tournament_types') && tournamentTypesRows.length > 0) {
+        sections.push(`
+          <div class="glass-card rounded-2xl p-5 space-y-3 border border-slate-800">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-blue-600/30 text-cyan-300 border border-blue-500/40">TABLE 2</span>
+                <h3 class="text-base font-bold font-mono text-white">tournament_types</h3>
+                <span class="text-xs font-mono text-slate-400">(Composite PK: TID, Ttype)</span>
+              </div>
+              <span class="text-xs font-mono text-cyan-300 font-semibold">${tournamentTypesRows.length} row(s)</span>
+            </div>
+            <div class="overflow-x-auto custom-scroll">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-slate-800 text-slate-400 font-mono uppercase bg-slate-900/60">
+                    <th class="py-2 px-3">TID (PK/FK)</th>
+                    <th class="py-2 px-3">Ttype (PK)</th>
+                    <th class="py-2 px-3">Joined Tournament (tournaments.Tname)</th>
+                    <th class="py-2 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                  ${tournamentTypesRows.map(tt => `
+                    <tr class="hover:bg-slate-800/40">
+                      <td class="py-2 px-3 font-mono font-bold text-cyan-300">${highlightMatch(tt.TID, q)}</td>
+                      <td class="py-2 px-3"><span class="px-2 py-0.5 rounded-full bg-cyan-500/15 text-cyan-300 border border-cyan-500/30">${highlightMatch(tt.Ttype, q)}</span></td>
+                      <td class="py-2 px-3 text-slate-300">${highlightMatch(tt.Tname, q)}</td>
+                      <td class="py-2 px-3 text-right whitespace-nowrap">
+                        <button onclick="openDetailModal('tournament', ${tt.TID})" class="px-2 py-1 rounded bg-blue-600/25 hover:bg-blue-600/40 text-cyan-200 border border-cyan-500/30 font-semibold">Inspect Tournament</button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `);
+      }
+
+      // 3. Table: matches
+      if (showTable('matches') && matchesRows.length > 0) {
+        sections.push(`
+          <div class="glass-card rounded-2xl p-5 space-y-3 border border-slate-800">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-cyan-600/30 text-cyan-300 border border-cyan-500/40">TABLE 3</span>
+                <h3 class="text-base font-bold font-mono text-white">matches</h3>
+                <span class="text-xs font-mono text-slate-400">(MID PK, match_date, match_time, mType, Outcome, TotalRuns, Umpires, TID FK)</span>
+              </div>
+              <span class="text-xs font-mono text-cyan-300 font-semibold">${matchesRows.length} row(s)</span>
+            </div>
+            <div class="overflow-x-auto custom-scroll">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-slate-800 text-slate-400 font-mono uppercase bg-slate-900/60">
+                    <th class="py-2 px-3">MID (PK)</th>
+                    <th class="py-2 px-3">Date &amp; Time</th>
+                    <th class="py-2 px-3">mType</th>
+                    <th class="py-2 px-3">Teams</th>
+                    <th class="py-2 px-3">Outcome</th>
+                    <th class="py-2 px-3">TotalRuns</th>
+                    <th class="py-2 px-3">Umpires</th>
+                    <th class="py-2 px-3">TID (FK)</th>
+                    <th class="py-2 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                  ${matchesRows.map(m => `
+                    <tr class="hover:bg-slate-800/40">
+                      <td class="py-2 px-3 font-mono font-bold text-cyan-300">#${highlightMatch(m.MID, q)}</td>
+                      <td class="py-2 px-3 font-mono text-slate-300">${highlightMatch(m.match_date, q)} ${highlightMatch(m.match_time, q)}</td>
+                      <td class="py-2 px-3"><span class="px-2 py-0.5 rounded font-mono bg-amber-400/20 text-amber-300">${highlightMatch(m.mType, q)}</span></td>
+                      <td class="py-2 px-3 font-semibold text-white">${highlightMatch(m.Teams, q)}</td>
+                      <td class="py-2 px-3 text-emerald-400">${highlightMatch(m.Outcome, q)}</td>
+                      <td class="py-2 px-3 font-mono font-bold text-amber-300">${highlightMatch(m.TotalRuns, q)}</td>
+                      <td class="py-2 px-3 text-slate-300">${highlightMatch(m.Umpires, q)}</td>
+                      <td class="py-2 px-3 font-mono text-cyan-300">${highlightMatch(m.TID ?? 'NULL', q)}</td>
+                      <td class="py-2 px-3 text-right space-x-1.5 whitespace-nowrap">
+                        <button onclick="openDetailModal('match', ${m.MID})" class="px-2 py-1 rounded bg-cyan-600/25 hover:bg-cyan-600/40 text-cyan-200 border border-cyan-500/30 font-semibold">Inspect</button>
+                        <button onclick="jumpToEntityInTab('matches', 'search-matches', '${escapeHtml(String(m.MID))}')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200">Open Tab</button>
+                        ${isAdmin ? `<button onclick="openMatchModal(${m.MID})" class="px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300">Edit</button>` : ''}
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `);
+      }
+
+      // 4. Table: match_teams
+      if (showTable('match_teams') && matchTeamsRows.length > 0) {
+        sections.push(`
+          <div class="glass-card rounded-2xl p-5 space-y-3 border border-slate-800">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-cyan-600/30 text-cyan-300 border border-cyan-500/40">TABLE 4</span>
+                <h3 class="text-base font-bold font-mono text-white">match_teams</h3>
+                <span class="text-xs font-mono text-slate-400">(Composite PK: MID, TeamName)</span>
+              </div>
+              <span class="text-xs font-mono text-cyan-300 font-semibold">${matchTeamsRows.length} row(s)</span>
+            </div>
+            <div class="overflow-x-auto custom-scroll">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-slate-800 text-slate-400 font-mono uppercase bg-slate-900/60">
+                    <th class="py-2 px-3">MID (PK/FK)</th>
+                    <th class="py-2 px-3">TeamName (PK)</th>
+                    <th class="py-2 px-3">Joined Match Date &amp; Format</th>
+                    <th class="py-2 px-3">Joined Outcome</th>
+                    <th class="py-2 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                  ${matchTeamsRows.map(mt => `
+                    <tr class="hover:bg-slate-800/40">
+                      <td class="py-2 px-3 font-mono font-bold text-cyan-300">#${highlightMatch(mt.MID, q)}</td>
+                      <td class="py-2 px-3 font-bold text-white">${highlightMatch(mt.TeamName, q)}</td>
+                      <td class="py-2 px-3 font-mono text-slate-300">${highlightMatch(mt.match_date, q)} (${highlightMatch(mt.mType, q)})</td>
+                      <td class="py-2 px-3 text-emerald-400">${highlightMatch(mt.Outcome, q)}</td>
+                      <td class="py-2 px-3 text-right whitespace-nowrap">
+                        <button onclick="openDetailModal('match', ${mt.MID})" class="px-2 py-1 rounded bg-cyan-600/25 hover:bg-cyan-600/40 text-cyan-200 border border-cyan-500/30 font-semibold">Inspect Match</button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `);
+      }
+
+      // 5. Table: players
+      if (showTable('players') && playersRows.length > 0) {
+        sections.push(`
+          <div class="glass-card rounded-2xl p-5 space-y-3 border border-slate-800">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-amber-500/25 text-amber-300 border border-amber-500/40">TABLE 5</span>
+                <h3 class="text-base font-bold font-mono text-white">players</h3>
+                <span class="text-xs font-mono text-slate-400">(PID INT PK, Pname, Country, Salary DECIMAL(12,2))</span>
+              </div>
+              <span class="text-xs font-mono text-amber-300 font-semibold">${playersRows.length} row(s)</span>
+            </div>
+            <div class="overflow-x-auto custom-scroll">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-slate-800 text-slate-400 font-mono uppercase bg-slate-900/60">
+                    <th class="py-2 px-3">PID (PK)</th>
+                    <th class="py-2 px-3">Pname</th>
+                    <th class="py-2 px-3">Country</th>
+                    <th class="py-2 px-3 text-right">Salary (USD)</th>
+                    <th class="py-2 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                  ${playersRows.map(p => `
+                    <tr class="hover:bg-slate-800/40">
+                      <td class="py-2 px-3 font-mono font-bold text-amber-300">#${highlightMatch(p.PID, q)}</td>
+                      <td class="py-2 px-3 font-bold text-white">${highlightMatch(p.Pname, q)}</td>
+                      <td class="py-2 px-3 text-cyan-300">${highlightMatch(p.Country, q)}</td>
+                      <td class="py-2 px-3 text-right font-mono text-emerald-400">$${highlightMatch(Number(p.Salary).toLocaleString('en-US', { minimumFractionDigits: 2 }), q)}</td>
+                      <td class="py-2 px-3 text-right space-x-1.5 whitespace-nowrap">
+                        <button onclick="openDetailModal('player', ${p.PID})" class="px-2 py-1 rounded bg-blue-600/25 hover:bg-blue-600/40 text-cyan-200 border border-cyan-500/30 font-semibold">Inspect</button>
+                        <button onclick="jumpToEntityInTab('players', 'search-players', '${escapeHtml(p.Pname)}')" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-slate-200">Open Tab</button>
+                        ${isAdmin ? `<button onclick="openPlayerModal(${p.PID})" class="px-2 py-1 rounded bg-amber-500/20 hover:bg-amber-500/30 text-amber-300">Edit</button>` : ''}
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `);
+      }
+
+      // 6. Table: player_formats
+      if (showTable('player_formats') && playerFormatsRows.length > 0) {
+        sections.push(`
+          <div class="glass-card rounded-2xl p-5 space-y-3 border border-slate-800">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-amber-500/25 text-amber-300 border border-amber-500/40">TABLE 6</span>
+                <h3 class="text-base font-bold font-mono text-white">player_formats</h3>
+                <span class="text-xs font-mono text-slate-400">(Composite PK: PID, Format | Ranking INT)</span>
+              </div>
+              <span class="text-xs font-mono text-amber-300 font-semibold">${playerFormatsRows.length} row(s)</span>
+            </div>
+            <div class="overflow-x-auto custom-scroll">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-slate-800 text-slate-400 font-mono uppercase bg-slate-900/60">
+                    <th class="py-2 px-3">PID (PK/FK)</th>
+                    <th class="py-2 px-3">Format (PK)</th>
+                    <th class="py-2 px-3">Ranking</th>
+                    <th class="py-2 px-3">Joined Player (players.Pname)</th>
+                    <th class="py-2 px-3">Country</th>
+                    <th class="py-2 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                  ${playerFormatsRows.map(pf => `
+                    <tr class="hover:bg-slate-800/40">
+                      <td class="py-2 px-3 font-mono text-amber-300">#${highlightMatch(pf.PID, q)}</td>
+                      <td class="py-2 px-3"><span class="px-2 py-0.5 rounded font-mono bg-blue-500/20 text-cyan-300">${highlightMatch(pf.Format, q)}</span></td>
+                      <td class="py-2 px-3 font-mono font-bold text-amber-400">#${highlightMatch(pf.Ranking, q)}</td>
+                      <td class="py-2 px-3 font-semibold text-white">${highlightMatch(pf.Pname, q)}</td>
+                      <td class="py-2 px-3 text-slate-300">${highlightMatch(pf.Country, q)}</td>
+                      <td class="py-2 px-3 text-right whitespace-nowrap">
+                        <button onclick="openDetailModal('player', ${pf.PID})" class="px-2 py-1 rounded bg-blue-600/25 hover:bg-blue-600/40 text-cyan-200 border border-cyan-500/30 font-semibold">Inspect Player</button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `);
+      }
+
+      // 7. Table: player_matches
+      if (showTable('player_matches') && playerMatchesRows.length > 0) {
+        sections.push(`
+          <div class="glass-card rounded-2xl p-5 space-y-3 border border-slate-800">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-emerald-500/25 text-emerald-300 border border-emerald-500/40">TABLE 7</span>
+                <h3 class="text-base font-bold font-mono text-white">player_matches</h3>
+                <span class="text-xs font-mono text-slate-400">(Composite PK/FK Junction: PID, MID)</span>
+              </div>
+              <span class="text-xs font-mono text-emerald-300 font-semibold">${playerMatchesRows.length} row(s)</span>
+            </div>
+            <div class="overflow-x-auto custom-scroll">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-slate-800 text-slate-400 font-mono uppercase bg-slate-900/60">
+                    <th class="py-2 px-3">PID (PK/FK)</th>
+                    <th class="py-2 px-3">Joined Player</th>
+                    <th class="py-2 px-3">MID (PK/FK)</th>
+                    <th class="py-2 px-3">Joined Fixture &amp; Date</th>
+                    <th class="py-2 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                  ${playerMatchesRows.map(pm => `
+                    <tr class="hover:bg-slate-800/40">
+                      <td class="py-2 px-3 font-mono text-amber-300">#${highlightMatch(pm.PID, q)}</td>
+                      <td class="py-2 px-3 font-semibold text-white">${highlightMatch(pm.Pname, q)} <span class="text-slate-400">(${highlightMatch(pm.Country, q)})</span></td>
+                      <td class="py-2 px-3 font-mono text-cyan-300">#${highlightMatch(pm.MID, q)}</td>
+                      <td class="py-2 px-3 text-slate-200">${highlightMatch(pm.MatchLabel, q)} <span class="font-mono text-slate-400">(${highlightMatch(pm.match_date, q)} • ${highlightMatch(pm.mType, q)})</span></td>
+                      <td class="py-2 px-3 text-right space-x-1.5 whitespace-nowrap">
+                        <button onclick="openDetailModal('player', ${pm.PID})" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-amber-300">Player</button>
+                        <button onclick="openDetailModal('match', ${pm.MID})" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300">Match</button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `);
+      }
+
+      // 8. Table: player_tournaments
+      if (showTable('player_tournaments') && playerTournamentsRows.length > 0) {
+        sections.push(`
+          <div class="glass-card rounded-2xl p-5 space-y-3 border border-slate-800">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-purple-500/25 text-purple-300 border border-purple-500/40">TABLE 8</span>
+                <h3 class="text-base font-bold font-mono text-white">player_tournaments</h3>
+                <span class="text-xs font-mono text-slate-400">(Composite PK/FK Junction: PID, TID)</span>
+              </div>
+              <span class="text-xs font-mono text-purple-300 font-semibold">${playerTournamentsRows.length} row(s)</span>
+            </div>
+            <div class="overflow-x-auto custom-scroll">
+              <table class="w-full text-left border-collapse text-xs">
+                <thead>
+                  <tr class="border-b border-slate-800 text-slate-400 font-mono uppercase bg-slate-900/60">
+                    <th class="py-2 px-3">PID (PK/FK)</th>
+                    <th class="py-2 px-3">Joined Player</th>
+                    <th class="py-2 px-3">TID (PK/FK)</th>
+                    <th class="py-2 px-3">Joined Tournament</th>
+                    <th class="py-2 px-3 text-right">Actions</th>
+                  </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                  ${playerTournamentsRows.map(pt => `
+                    <tr class="hover:bg-slate-800/40">
+                      <td class="py-2 px-3 font-mono text-amber-300">#${highlightMatch(pt.PID, q)}</td>
+                      <td class="py-2 px-3 font-semibold text-white">${highlightMatch(pt.Pname, q)} <span class="text-slate-400">(${highlightMatch(pt.Country, q)})</span></td>
+                      <td class="py-2 px-3 font-mono text-cyan-300">TID ${highlightMatch(pt.TID, q)}</td>
+                      <td class="py-2 px-3 text-slate-200">${highlightMatch(pt.Tname, q)} <span class="text-slate-400">(${highlightMatch(pt.Tduration, q)})</span></td>
+                      <td class="py-2 px-3 text-right space-x-1.5 whitespace-nowrap">
+                        <button onclick="openDetailModal('player', ${pt.PID})" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-amber-300">Player</button>
+                        <button onclick="openDetailModal('tournament', ${pt.TID})" class="px-2 py-1 rounded bg-slate-800 hover:bg-slate-700 text-cyan-300">Tournament</button>
+                      </td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `);
+      }
+
+      // 9. SQL Views: vw_player_rankings & vw_tournament_matches
+      if (showTable('views') && (vwRankingsRows.length > 0 || vwMatchesRows.length > 0)) {
+        sections.push(`
+          <div class="glass-card rounded-2xl p-5 space-y-3 border border-amber-500/30">
+            <div class="flex flex-wrap items-center justify-between gap-2 border-b border-slate-800 pb-2.5">
+              <div class="flex items-center gap-2">
+                <span class="px-2 py-0.5 rounded text-xs font-mono font-bold bg-amber-400/20 text-amber-300 border border-amber-400/40">SQL VIEWS</span>
+                <h3 class="text-base font-bold font-mono text-white">vw_player_rankings &amp; vw_tournament_matches</h3>
+              </div>
+              <button onclick="switchTab('views')" class="text-xs font-mono text-cyan-300 hover:text-cyan-200">Open SQL Views Tab &rarr;</button>
+            </div>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+              <div>
+                <div class="text-xs font-mono text-amber-300 mb-1.5">vw_player_rankings (${vwRankingsRows.length} matches)</div>
+                <div class="overflow-x-auto max-h-56 custom-scroll border border-slate-800 rounded-xl">
+                  <table class="w-full text-left border-collapse text-xs">
+                    <tbody class="divide-y divide-slate-800/60">
+                      ${vwRankingsRows.map(r => `
+                        <tr class="hover:bg-slate-800/40">
+                          <td class="py-1.5 px-2.5 font-mono text-cyan-300">${highlightMatch(r.Format, q)} #${highlightMatch(r.Ranking, q)}</td>
+                          <td class="py-1.5 px-2.5 font-semibold text-white">${highlightMatch(r.Pname, q)}</td>
+                          <td class="py-1.5 px-2.5 text-slate-300">${highlightMatch(r.Country, q)}</td>
+                        </tr>
+                      `).join('') || '<tr><td class="p-3 text-slate-500">No matches in vw_player_rankings</td></tr>'}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+              <div>
+                <div class="text-xs font-mono text-cyan-300 mb-1.5">vw_tournament_matches (${vwMatchesRows.length} matches)</div>
+                <div class="overflow-x-auto max-h-56 custom-scroll border border-slate-800 rounded-xl">
+                  <table class="w-full text-left border-collapse text-xs">
+                    <tbody class="divide-y divide-slate-800/60">
+                      ${vwMatchesRows.map(m => `
+                        <tr class="hover:bg-slate-800/40">
+                          <td class="py-1.5 px-2.5 font-mono text-amber-300">MID ${highlightMatch(m.MID, q)}</td>
+                          <td class="py-1.5 px-2.5 font-semibold text-white">${highlightMatch(m.Teams, q)}</td>
+                          <td class="py-1.5 px-2.5 text-emerald-400">${highlightMatch(m.Outcome, q)}</td>
+                        </tr>
+                      `).join('') || '<tr><td class="p-3 text-slate-500">No matches in vw_tournament_matches</td></tr>'}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          </div>
+        `);
+      }
+
+      resultsContainer.innerHTML = sections.join('');
+    };
+
+    // Global keyboard shortcut: '/' or Ctrl+K / Cmd+K focuses the header global search input
+    window.addEventListener('keydown', (e) => {
+      const tag = (e.target && e.target.tagName) ? e.target.tagName.toLowerCase() : '';
+      const isEditing = tag === 'input' || tag === 'textarea' || tag === 'select';
+      if ((e.key === '/' && !isEditing) || ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'k')) {
+        e.preventDefault();
+        const headerInput = document.getElementById('header-global-search');
+        if (headerInput) {
+          headerInput.focus();
+          headerInput.select();
+        }
+      }
+    });
 
     window.addEventListener('DOMContentLoaded', () => {
       loadSavedState();
