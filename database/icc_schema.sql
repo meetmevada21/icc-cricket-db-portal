@@ -1,5 +1,6 @@
 -- ============================================================================
--- ICC Cricket Management System - Complete MySQL Schema, Triggers, Views & Seed
+-- ICC Cricket Management System - Complete MySQL Schema, Triggers, Views,
+-- Stored Procedures (`sp_global_search`), RBAC Admins & Seed Data
 -- Generated from MySQL Workbench ER Diagram
 -- ============================================================================
 
@@ -9,7 +10,8 @@ CREATE DATABASE IF NOT EXISTS icc_db
 
 USE icc_db;
 
--- Drop existing views and tables in reverse dependency order for clean reload
+-- Drop existing procedures, views, and tables in reverse dependency order
+DROP PROCEDURE IF EXISTS sp_global_search;
 DROP VIEW IF EXISTS vw_player_rankings;
 DROP VIEW IF EXISTS vw_tournament_matches;
 
@@ -21,6 +23,18 @@ DROP TABLE IF EXISTS tournament_types;
 DROP TABLE IF EXISTS matches;
 DROP TABLE IF EXISTS players;
 DROP TABLE IF EXISTS tournaments;
+DROP TABLE IF EXISTS admins;
+
+-- ----------------------------------------------------------------------------
+-- 0. Table: admins (Role-Based Access Control for Portal CRUD)
+-- ----------------------------------------------------------------------------
+CREATE TABLE admins (
+    AdminID INT NOT NULL AUTO_INCREMENT,
+    Username VARCHAR(100) NOT NULL UNIQUE,
+    PasswordHash VARCHAR(255) NOT NULL,
+    Role VARCHAR(50) NOT NULL DEFAULT 'ICC_SUPER_ADMIN',
+    PRIMARY KEY (AdminID)
+) ENGINE=InnoDB;
 
 -- ----------------------------------------------------------------------------
 -- 1. Table: tournaments
@@ -200,6 +214,47 @@ BEGIN
     END IF;
 END$$
 
+-- ============================================================================
+-- STORED PROCEDURE: Global Search Across All 8 Data Tables (`sp_global_search`)
+-- ============================================================================
+CREATE PROCEDURE sp_global_search(IN p_query VARCHAR(255))
+BEGIN
+    DECLARE v_like VARCHAR(260);
+    SET v_like = CONCAT('%', COALESCE(TRIM(p_query), ''), '%');
+
+    SELECT 'tournaments' AS TableName, CAST(TID AS CHAR) AS PrimaryKey, Tname AS Title, Tduration AS Subtitle
+    FROM tournaments
+    WHERE CAST(TID AS CHAR) LIKE v_like OR Tname LIKE v_like OR Tduration LIKE v_like
+    UNION ALL
+    SELECT 'tournament_types' AS TableName, CONCAT(TID, ':', Ttype) AS PrimaryKey, Ttype AS Title, CONCAT('TID ', TID) AS Subtitle
+    FROM tournament_types
+    WHERE CAST(TID AS CHAR) LIKE v_like OR Ttype LIKE v_like
+    UNION ALL
+    SELECT 'matches' AS TableName, CAST(MID AS CHAR) AS PrimaryKey, CONCAT(mType, ' (', match_date, ') - ', Outcome) AS Title, CONCAT('Runs: ', TotalRuns, ' | Umpires: ', Umpires) AS Subtitle
+    FROM matches
+    WHERE CAST(MID AS CHAR) LIKE v_like OR match_date LIKE v_like OR mType LIKE v_like OR Outcome LIKE v_like OR Umpires LIKE v_like
+    UNION ALL
+    SELECT 'match_teams' AS TableName, CONCAT(MID, ':', TeamName) AS PrimaryKey, TeamName AS Title, CONCAT('Match MID ', MID) AS Subtitle
+    FROM match_teams
+    WHERE CAST(MID AS CHAR) LIKE v_like OR TeamName LIKE v_like
+    UNION ALL
+    SELECT 'players' AS TableName, CAST(PID AS CHAR) AS PrimaryKey, Pname AS Title, CONCAT(Country, ' | $', Salary) AS Subtitle
+    FROM players
+    WHERE CAST(PID AS CHAR) LIKE v_like OR Pname LIKE v_like OR Country LIKE v_like OR CAST(Salary AS CHAR) LIKE v_like
+    UNION ALL
+    SELECT 'player_formats' AS TableName, CONCAT(PID, ':', Format) AS PrimaryKey, CONCAT(Format, ' Rank #', Ranking) AS Title, CONCAT('Player PID ', PID) AS Subtitle
+    FROM player_formats
+    WHERE CAST(PID AS CHAR) LIKE v_like OR Format LIKE v_like OR CAST(Ranking AS CHAR) LIKE v_like
+    UNION ALL
+    SELECT 'player_matches' AS TableName, CONCAT(PID, ':', MID) AS PrimaryKey, CONCAT('PID ', PID, ' in Match MID ', MID) AS Title, 'player_matches junction' AS Subtitle
+    FROM player_matches
+    WHERE CAST(PID AS CHAR) LIKE v_like OR CAST(MID AS CHAR) LIKE v_like
+    UNION ALL
+    SELECT 'player_tournaments' AS TableName, CONCAT(PID, ':', TID) AS PrimaryKey, CONCAT('PID ', PID, ' in Tournament TID ', TID) AS Title, 'player_tournaments junction' AS Subtitle
+    FROM player_tournaments
+    WHERE CAST(PID AS CHAR) LIKE v_like OR CAST(TID AS CHAR) LIKE v_like;
+END$$
+
 DELIMITER ;
 
 -- ============================================================================
@@ -241,8 +296,11 @@ INNER JOIN matches m ON t.TID = m.TID
 ORDER BY m.match_date DESC, m.match_time DESC;
 
 -- ============================================================================
--- SEED DATA (Realistic ICC Tournaments, Matches, Players & Junctions)
+-- SEED DATA (Default Admin + Realistic ICC Tournaments, Matches, Players & Junctions)
 -- ============================================================================
+
+INSERT INTO admins (AdminID, Username, PasswordHash, Role) VALUES
+(1, 'admin', 'icc2026', 'ICC_SUPER_ADMIN');
 
 INSERT INTO tournaments (TID, Tname, Tduration) VALUES
 (101, 'ICC Men''s Cricket World Cup', '46 Days (Oct - Nov)'),
